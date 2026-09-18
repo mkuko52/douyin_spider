@@ -1,0 +1,10 @@
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pyjwt>=2.8.0
+pydantic>=2.5.0
+aiohttp>=3.9.0
+redis>=5.0.0
+PyExecJS>=1.5.1
+# signing/{send_code,sms_login} 的 main.py 依赖（subprocess 跑它们时要能 import）
+requests>=2.31
+cryptography>=42

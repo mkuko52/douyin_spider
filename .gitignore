@@ -1,0 +1,23 @@
+# ============ Python ============
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# ============ IDE / 编辑器 ============
+.idea/
+.vscode/
+
+# ============ Android 构建产物 & 本机配置 ============
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.keystore
+*.apk
+
+# ============ signing 各自项目内还有更细的 .gitignore ============
+# signing/send_code/.gitignore
+# signing/sms_login/.gitignore
+
+# 本地备份压缩包：内部含 config.local.json / 真实会话 cookie / 私密缓存，不入库
+signing/backup/

@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 登录页：结构与外观都在 XML 里（颜色 @color / 圆角 @drawable / 样式 @style）。
+     Java 侧只剩逻辑与事件，不再负责长相。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/login_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/dy_teal"
+    android:orientation="vertical">
+
+    <!-- 顶部青绿区 -->
+    <LinearLayout
+        android:id="@+id/login_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="24dp"
+        android:paddingTop="38dp"
+        android:paddingRight="24dp"
+        android:paddingBottom="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hello!"
+            android:textColor="@color/dy_white"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="欢迎使用 Douyin Spider"
+            android:textColor="@color/dy_white_cc"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="2dp"
+            android:text="免安装 · 直接用抖音 Web 登录"
+            android:textColor="@color/dy_white_99"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- 白色卡片（只圆上面两角） -->
+    <LinearLayout
+        android:id="@+id/login_card"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_card_top"
+        android:orientation="vertical"
+        android:paddingLeft="22dp"
+        android:paddingTop="18dp"
+        android:paddingRight="22dp"
+        android:paddingBottom="14dp">
+
+        <TextView
+            android:id="@+id/login_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="登录"
+            android:textColor="@color/dy_teal"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <!-- 已登录面板 -->
+        <LinearLayout
+            android:id="@+id/logged_in_panel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/logged_in_info"
+                style="@style/DyLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="10dp" />
+        </LinearLayout>
+
+        <!-- 表单1：账号 + 密码 -->
+        <LinearLayout
+            android:id="@+id/password_form"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="12dp">
+
+            <EditText
+                android:id="@+id/account_input"
+                style="@style/DyField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="账号 / 手机号"
+                android:inputType="text" />
+
+            <EditText
+                android:id="@+id/password_input"
+                style="@style/DyField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="密码"
+                android:inputType="textPassword" />
+
+            <TextView
+                style="@style/DyLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="25dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="8dp"
+                android:text="忘记密码？在抖音网页里点「忘记密码」"
+                android:textColor="@color/dy_primary_b" />
+        </LinearLayout>
+
+        <!-- 表单2：手机号 + 验证码 -->
+        <LinearLayout
+            android:id="@+id/sms_form"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="12dp"
+            android:visibility="gone">
+
+            <EditText
+                android:id="@+id/phone_input"
+                style="@style/DyField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="手机号"
+                android:inputType="phone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/sms_code_input"
+                    style="@style/DyField"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:layout_weight="1"
+                    android:hint="短信验证码"
+                    android:inputType="number" />
+
+                <Button
+                    android:id="@+id/sms_send_btn"
+                    android:layout_width="116dp"
+                    android:layout_height="46dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="@drawable/bg_btn_teal"
+                    android:text="获取验证码"
+                    android:textColor="@color/dy_white"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 表单3：扫码 -->
+        <LinearLayout
+            android:id="@+id/qr_form"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="10dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/qr_image"
+                android:layout_width="220dp"
+                android:layout_height="220dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_field"
+                android:padding="8dp" />
+
+            <TextView
+                android:id="@+id/qr_status"
+                style="@style/DyLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="准备取二维码…" />
+        </LinearLayout>
+
+        <!-- 表单4：抖音网页登录（备用） -->
+        <LinearLayout
+            android:id="@+id/web_form"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="10dp"
+            android:orientation="vertical"
+            android:visibility="gone" />
+
+        <!-- 账号备注名（扫码/网页两个表单共用） -->
+        <EditText
+            android:id="@+id/login_name_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="账号备注名（可空；填了就存成这个账号）"
+            android:inputType="text"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/login_status"
+            style="@style/DyLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:paddingBottom="6dp" />
+    </LinearLayout>
+</LinearLayout>

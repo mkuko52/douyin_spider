@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 搜索采集页：关键词/账号/代理 + 字段语言 + 两个动作按钮 + 结果列表。
+     结构与外观在 XML；结果卡片仍由 Java 动态追加到 search_rows。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/search_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingLeft="18dp"
+    android:paddingTop="18dp"
+    android:paddingRight="18dp"
+    android:paddingBottom="18dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="搜索采集"
+        android:textColor="@color/dy_text_main"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        style="@style/DyLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="输入关键词，取列表并逐个采集详情/评论" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <EditText
+            android:id="@+id/keyword_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="搜索关键词"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/account_query_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="账号（可空 = 默认）"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/proxy_query_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="代理（可空 = 用代理池）"
+            android:inputType="text" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="字段语言"
+            android:textColor="@color/dy_text_main"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            style="@style/DyLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:text="展示 / 导出用哪套列名" />
+
+        <LinearLayout
+            android:id="@+id/search_lang_chips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/btn_search"
+            style="@style/DyButtonTeal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="搜 索（只要列表）" />
+
+        <Button
+            android:id="@+id/btn_collect"
+            style="@style/DyButtonTeal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="采 集（列表 + 详情 + 评论，入库）" />
+
+        <TextView
+            android:id="@+id/search_status"
+            style="@style/DyLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/search_rows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </LinearLayout>
+</LinearLayout>

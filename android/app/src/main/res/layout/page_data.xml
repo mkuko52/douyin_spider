@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 存储页主卡：类型 / 字段语言 / 筛选输入 / 查询导出 / 同步 / 状态 / 结果列表。
+     「连接配置」那张卡仍由 profileCard() 在 Java 里追加。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/data_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingLeft="18dp"
+    android:paddingTop="18dp"
+    android:paddingRight="18dp"
+    android:paddingBottom="18dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="存储"
+        android:textColor="@color/dy_text_main"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        style="@style/DyLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="本地库筛选 → 导出 CSV / 同步 MySQL·Mongo" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <EditText
+            android:id="@+id/data_type_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="类型：aweme / comment / reply"
+            android:inputType="text"
+            android:text="aweme" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="字段语言"
+            android:textColor="@color/dy_text_main"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            style="@style/DyLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:text="导出 CSV / 同步数据库时用哪套列名" />
+
+        <LinearLayout
+            android:id="@+id/data_lang_chips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <EditText
+            android:id="@+id/data_q_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="关键词（模糊）"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/data_aweme_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="aweme_id（精确）"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/data_min_digg_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="最小点赞数"
+            android:inputType="number" />
+
+        <EditText
+            android:id="@+id/data_fields_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="字段（逗号分隔，空 = 全部）"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/data_limit_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="返回条数"
+            android:inputType="number"
+            android:text="20" />
+
+        <Button
+            android:id="@+id/btn_query"
+            style="@style/DyButtonTeal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="查 询" />
+
+        <Button
+            android:id="@+id/btn_export"
+            style="@style/DyButtonTeal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="导出 CSV（去重）" />
+
+        <EditText
+            android:id="@+id/data_target_input"
+            style="@style/DyField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="同步目标库：sqlite / mysql / mongo"
+            android:inputType="text"
+            android:text="sqlite" />
+
+        <Button
+            android:id="@+id/btn_sync"
+            style="@style/DyButtonTeal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="同步到目标库（去重 upsert）" />
+
+        <Button
+            android:id="@+id/btn_test"
+            style="@style/DyButtonGhost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="测试各库连通性" />
+
+        <TextView
+            android:id="@+id/data_status"
+            style="@style/DyLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="6dp" />
+
+        <LinearLayout
+            android:id="@+id/data_rows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </LinearLayout>
+</LinearLayout>

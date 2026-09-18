@@ -1,0 +1,16 @@
+# 本地/私密/缓存/输出，不入库
+config.local.json
+output/
+
+# 逆向证据缓存：私密会话/侦察脚本/源码/环境记录含真实 cookie 与手机号
+# samples/ 保留：tests/test_vectors.py 的离线固定向量依赖它（已确认无 cookie）
+js_reverse_cache/private/
+js_reverse_cache/recon/
+js_reverse_cache/source/
+js_reverse_cache/env/
+js_reverse_cache/checkpoint.json
+js_reverse_cache/checkpoint.md
+
+__pycache__/
+*.pyc
+.pytest_cache/

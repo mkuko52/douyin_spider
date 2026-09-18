@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 与 Ui.java 里的配色保持一致；之后 Java 里就可以不写颜色了 -->
+<resources>
+    <color name="dy_bg_top">#FFEAF3FF</color>
+    <color name="dy_bg_mid">#FFF3ECFF</color>
+    <color name="dy_bg_bot">#FFE8FBF6</color>
+
+    <color name="dy_primary_a">#FF6AA6F8</color>
+    <color name="dy_primary_b">#FF9B8CF5</color>
+    <color name="dy_mint">#FF3FD0BE</color>
+    <color name="dy_coral">#FFFF9AA0</color>
+    <color name="dy_sand">#FFFFC978</color>
+    <color name="dy_lilac">#FFB79CF6</color>
+
+    <color name="dy_text_main">#FF20304A</color>
+    <color name="dy_text_muted">#FF8A94AC</color>
+    <color name="dy_card">#FFFFFFFF</color>
+    <color name="dy_field_bg">#FFF4F7FD</color>
+
+    <color name="dy_teal">#FF0F6E6B</color>
+    <color name="dy_teal_dark">#FF0A5654</color>
+    <color name="dy_teal_soft">#FFE7F1F0</color>
+
+    <color name="dy_white">#FFFFFFFF</color>
+    <color name="dy_white_cc">#CCFFFFFF</color>
+    <color name="dy_white_99">#99FFFFFF</color>
+</resources>

@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- 澶嶇敤鏍峰紡锛氳緭鍏ユ / 闈掔豢鎸夐挳 / 鐧借壊鍦嗚鍗?-->
+<resources>
+
+    <style name="DyField">
+        <item name="android:background">@drawable/bg_field</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:textColor">@color/dy_text_main</item>
+        <item name="android:textColorHint">@color/dy_text_muted</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <style name="DyButtonTeal" parent="android:Widget.Button">
+        <item name="android:background">@drawable/bg_btn_teal</item>
+        <item name="android:textColor">@color/dy_white</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:layout_marginTop">14dp</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+
+    <style name="DyLabel">
+        <item name="android:textColor">@color/dy_text_muted</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+    <style name="DyButtonGhost" parent="android:Widget.Button">
+        <item name="android:background">@drawable/bg_btn_ghost</item>
+        <item name="android:textColor">@color/dy_primary_b</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:minHeight">46dp</item>
+    </style>
+</resources>
+

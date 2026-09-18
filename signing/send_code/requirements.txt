@@ -1,0 +1,4 @@
+cryptography>=42
+requests>=2.31
+aiohttp>=3.9
+playwright>=1.40

@@ -1,0 +1,15 @@
+# 本地/私密/缓存/输出，不入库
+config.local.json
+output/
+
+# 逆向证据缓存：含真实 cookie / 手机号 / 抓包样本，整目录不入库
+# （tests/test_vectors.py 缺样本时会 skipTest，不会失败）
+js_reverse_cache/
+
+# 项目自带运行时（体积大，可重建）
+runtime/venv/
+runtime/node_local/
+runtime/downloads/
+
+__pycache__/
+*.pyc

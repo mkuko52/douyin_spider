@@ -1,0 +1,6 @@
+aiohttp>=3.9
+pyexecjs2>=1.6.1
+cryptography>=42
+# 下面两个只有 recon 脚本 / --abogus-source browser 才需要
+# requests>=2.31
+# playwright>=1.40

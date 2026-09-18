@@ -1,0 +1,4 @@
+// 顶层：只声明插件版本（本机 Gradle 缓存里已有 AGP 9.4.0 + Gradle 9.6.0，可离线 sync）
+plugins {
+    id 'com.android.application' version '9.4.0' apply false
+}

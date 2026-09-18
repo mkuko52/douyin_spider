@@ -1,0 +1,81 @@
+{
+  "_说明": "浏览器现场抓包（2026-09-18）的 sms_login 请求固定向量；sign/qs/aid-sign 与浏览器逐位一致。",
+  "capturedFrom": "POST https://login.douyin.com/passport/web/sms_login/ (Chrome 153, www.douyin.com 登录弹窗)",
+  "endpoint": "https://login.douyin.com/passport/web/sms_login/",
+  "path": "/passport/web/sms_login/",
+  "params": {
+    "passport_jssdk_version": "3.4.4",
+    "passport_jssdk_type": "normal",
+    "is_from_ttaccountsdk": 1,
+    "aid": 6383,
+    "language": "zh",
+    "account_app_language": "zh-CN",
+    "ts": "1789732800",
+    "is_from_iesaccountsaas": 1,
+    "p_ui": "2.4.4",
+    "p_ca": "4.0.26",
+    "p_ca_real": "1.0.0.910",
+    "fp": "verify_mu6s5arn_PTYVG3gm_p5Iw_4kOY_A19L_v1PjlXhFKtUF",
+    "verifyFp": "verify_mu6s5arn_PTYVG3gm_p5Iw_4kOY_A19L_v1PjlXhFKtUF",
+    "account_sdk_source": "web",
+    "account_sdk_source_info": "7e276d64776172647760466a6b66707777606b667c273f3731292772606761776c736077273f63646976602927666d776a686061776c736077273f63646976602927766d60696961776c736077273f63646976602927756970626c6b76273f3029276c6b6b60774d606c626d71273f3c3d3029276c6b6b6077526c61716d273f343c353129276a707160774d606c626d71273f373d29276a70716077526c61716d273f34333529277260676269273f7e2773606b616a77273f27426a6a626960254c6b662b252d4b534c414c442c27292777606b6160776077273f27444b424940252d4b534c414c4429254b534c414c44254260436a7766602557515d253135333525516c252d357d35353535373d35362c25416c77606671364134342573765a305a352575765a305a35292541364134342c277829276470716a6864716c6a6b273f7e2776273f27353535353535353527292766273f273535353427292775273f27353535353535352729277634273f2735353535353535352729276634273f27353535352729277534273f273527782927756077636a7768646b6660273f7e27716c68604a776c626c6b273f34323d3c3231353730323037352b312927707660614f564d606475566c7f60273f31353c33343c35353129276b64736c6264716c6a6b516c686c6b62273f7e276160666a616061476a617c566c7f60273f3c3c333434312927606b71777c517c7560273f276b64736c6264716c6a6b2729276c6b6c716c64716a77517c7560273f276b64736c6264716c6a6b2729276b646860273f276d717175763f2a2a7272722b616a707c6c6b2b666a682a27292777606b61607747696a666e6c6b62567164717076273f276b6a6b2867696a666e6c6b62272927766077736077516c686c6b62273f2766616b286664666d602960616260296a776c626c6b296c6b6b60772971715a646272272927627069605671647771273f343536322b323c3c3c3c3c3c3c3235343c3d29276270696041707764716c6a6b273f276b6a6b60277878292767776a72766077273f7e2771273f27323d313333373531323c3d3234272927676c715a75776a716a666a69273f276364697660272927676c715a6d6069756077273f63646976607878",
+    "p_js_v": "3.4.4",
+    "p_js_t": "pro",
+    "p_zt": "3.3.25",
+    "p_ver": "1.1.3",
+    "p_ver_real": "0",
+    "request_host": "https%3A%2F%2Fwww.douyin.com",
+    "p_bd": "1.0.1.19-fix.01",
+    "p_ts": 1789740278617,
+    "p_no": "ee2d3166745dac64e03e1b00d62e78ed51b7ee09a1e00a9f10ebde487e4ff69c",
+    "biz_trace_id": "093fee5c",
+    "device_platform": "web_app"
+  },
+  "bodyRaw": {
+    "service": "https%3A%2F%2Fwww.douyin.com",
+    "mix_mode": "1",
+    "mobile": "2e3d332534363d3535353535353535",
+    "code": "343736313033",
+    "fixed_mix_mode": "1"
+  },
+  "bodyJs": {
+    "service": "https://www.douyin.com",
+    "mix_mode": "1",
+    "mobile": "+86 13800000000",
+    "code": "123456",
+    "fixed_mix_mode": "1"
+  },
+  "expected": {
+    "sign": "560cf894ed29636bb0a2126071633307c8f3cdef77bb7c94e4ae0d3e00359051",
+    "qs": "6466666a706b715a6475755a69646b6270646260296466666a706b715a76616e5a766a70776660296466666a706b715a76616e5a766a707766605a6c6b636a29646c6129676c7f5a71776466605a6c61296160736c66605a75696471636a7768296375296c765a63776a685a6c60766466666a706b7176646476296c765a63776a685a71716466666a706b7176616e2969646b6270646260",
+    "aidSign": "b4e618e23220e5d02d91c1b546f4e1481d117980bb8d7101892da0a96dce8cdc",
+    "aidSignTs": "1789732800",
+    "signKeys": [
+      "account_app_language",
+      "account_sdk_source",
+      "account_sdk_source_info",
+      "aid",
+      "biz_trace_id",
+      "device_platform",
+      "fp",
+      "is_from_iesaccountsaas",
+      "is_from_ttaccountsdk",
+      "language"
+    ],
+    "response": {
+      "error_code": 1203,
+      "description": "错误次数过多或验证码过期，请稍后重试",
+      "desc_url": "Please see https://zjsms.com/JqeFwYh/ for help"
+    }
+  },
+  "aBogus": {
+    "_说明": "a_bogus 每次请求都不同（含随机环境项），所以不存固定期望值，只存可复现性断言。",
+    "freeze": {
+      "now": 1789740278617,
+      "seed": 42
+    },
+    "freezeQuery": "a=1&b=2",
+    "freezeExpectedLen": 184,
+    "freezeExpected": null
+  }
+}
