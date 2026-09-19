@@ -1,10 +1,16 @@
+# 后端自带 venv：backend/runtime/venv（用 backend/start.bat / start.sh 起）
+# 它同时当“没有自带 venv 的签名项目”的解释器 —— crawler._python() 找不到项目 venv 时
+# 回落 sys.executable，所以下面必须把签名项目要 import 的包也装上。
+
+# --- web 层 ---
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 pyjwt>=2.8.0
 pydantic>=2.5.0
+
+# --- 签名项目（subprocess 跑它们的 main.py 时要能 import）---
 aiohttp>=3.9.0
-redis>=5.0.0
-PyExecJS>=1.5.1
-# signing/{send_code,sms_login} 的 main.py 依赖（subprocess 跑它们时要能 import）
 requests>=2.31
 cryptography>=42
+pyexecjs2>=1.6.1        # 提供 execjs（_shared/signer.py、sms_login/utils/signer.py 用）
+redis>=5.0.0            # 预留（cache.py 以后换真 Redis）

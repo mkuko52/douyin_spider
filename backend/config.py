@@ -24,6 +24,7 @@ class Settings:
     SEND_CODE_TIMEOUT: int = 180
     SMS_LOGIN_TIMEOUT: int = 180
     SMS_LOGIN_ABOGUS_SOURCE: str = "nv8"  # nv8 = 无浏览器，实测登录成功
+    DATA_TIMEOUT: int = 60  # 单个数据接口（signing/aweme_* 等）的 CLI 超时
     SESSION_TTL_SECONDS: int = 1800  # 发码会话 / 登录态的缓存时长
     
     # Douyin

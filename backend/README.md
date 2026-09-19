@@ -11,8 +11,11 @@
 
 ```bash
 cd D:\spider_projects\web\douyin_spider
-pip install -r backend\requirements.txt
+python backend\runtime\bootstrap.py --install     # 建 backend/runtime/venv + 装依赖
 ```
+
+（等价于手动 `python -m venv backend\runtime\venv` + `backend\runtime\venv\Scripts\python.exe -m pip install -r backend\requirements.txt`。
+自检：`python backend\runtime\bootstrap.py --check`）
 
 ## 2. 启动
 
@@ -20,14 +23,14 @@ pip install -r backend\requirements.txt
 
 ```bash
 cd D:\spider_projects\web\douyin_spider
-python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+backend\start.bat                     # Windows：自动用 backend/runtime/venv
+# 或  ./backend/start.sh                # Linux/macOS
+
+# 不用脚本也行：
+backend\runtime\venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
 
-开发时自动重载：
-
-```bash
-python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
-```
+开发时自动重载：`backend\start.bat --reload`。
 
 > ⚠️ **不要用 `cd backend && python main.py`** —— 相对 import 会直接报
 > `ImportError: attempted relative import with no known parent package`。
@@ -42,16 +45,18 @@ curl http://127.0.0.1:8000/health      # {"status":"ok"}
 
 ---
 
-## 3. 依赖的运行环境（一般都已经就绪）
+## 3. 运行环境（自带 venv + 自带 node，不依赖系统全局环境）
 
 | 项 | 位置 / 要求 |
 |---|---|
-| `send_code` 的解释器 | `signing/send_code/runtime/venv`（自带，含 aiohttp / playwright / cryptography） |
-| `sms_login` 的解释器 | 启动后端的同一个 Python（需 requests / pyexecjs2 / cryptography） |
-| nv8 的 node | `signing/send_code/runtime/node_local/node.exe`（v22.20.0） |
-| playwright 浏览器 | `%LOCALAPPDATA%\ms-playwright\chromium-*`（发码要用） |
+| **后端 venv** | `backend/runtime/venv`（`backend/runtime/bootstrap.py --install` 可重建）|
+| `send_code` 的解释器 | `signing/send_code/runtime/venv`（自带，含 aiohttp / playwright / cryptography）|
+| 其余签名项目的解释器 | **后端 venv**（`crawler._python()` 回落 `sys.executable`，所以后端 venv 里也装了 requests / cryptography / pyexecjs2 / aiohttp）|
+| **Node** | `signing/send_code/runtime/node_local/node.exe`（v22.20.0）；数据项目经 `signing/_shared/node.py` **优先用它，不依赖 PATH** |
+| nv8（`replies` 要） | `NV8_SRC`（默认 `D:/develop_software/nv8/src/index.js`）；建议起常驻服务 `signing/_shared/start_nv8_service.bat` |
+| playwright 浏览器 | `%LOCALAPPDATA%\ms-playwright\chromium-*`（发码要用）|
 
-`crawler._python()` 自动挑选：`SIGNING_PYTHON` 配置 > 项目自带 venv > 当前解释器。
+`crawler._python()` 自动挑选：`SIGNING_PYTHON` 配置 > 项目自带 venv > `sys.executable`（= 后端 venv）。
 要强制指定就在 `config.py` 里设 `SIGNING_PYTHON`。
 
 ---

@@ -1,0 +1,2 @@
+requests>=2.31
+pyexecjs2>=1.6.1

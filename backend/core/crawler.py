@@ -1,4 +1,10 @@
-"""crawler.py —— 抖音纯协议请求调度（复用 signing/ 两个项目的交付入口 main.py）。
+"""crawler.py —— 抖音纯协议请求调度（复用 signing/ 各项目的交付入口 main.py）。
+
+两条线：
+- 登录（send_code / sms_login）：需要浏览器/nv8 工件，加全局锁（同上）。
+- 数据（aweme_detail / comment_list / comment_reply / aweme_feed / user_profile / aweme_search）：
+  只需 a_bogus + 会话 cookie（`_run_data`），各自独立、不加锁；
+  带 `--check-login` 时先确认会话是 www 登录态，否则抬成 `DouyinAuthError`（路由层 401）。
 
 分工：签名项目是唯一 HTTP 出口（参数/签名/会话引导/发请求都在它们内部完成），
 backend 只做「调度 + 会话与登录态缓存」。
@@ -36,6 +42,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 from ..config import settings
+from . import normalize
 from .cache import get_cache
 
 logger = logging.getLogger(__name__)
@@ -49,6 +56,10 @@ LOGIN_COOKIE_NAMES = (
 
 class DouyinError(RuntimeError):
     """调用签名项目失败（参数非法 / 进程崩溃 / 超时 / 输出不是 JSON）。"""
+
+
+class DouyinAuthError(DouyinError):
+    """会话不是 `www.douyin.com` 登录态（未登录 / 会话过期）→ 路由层回 401。"""
 
 
 def is_success(body: dict) -> bool:
@@ -104,6 +115,10 @@ class DouyinCrawler:
             )
             if proc.returncode != 0:
                 tail = (proc.stderr or proc.stdout or "").strip()[-800:]
+                if "NEED_LOGIN" in tail:
+                    # 数据项目 `--check-login` 的约定（见 signing/_shared/cli.py）
+                    raise DouyinAuthError(
+                        tail.split("NEED_LOGIN:", 1)[1].strip() or "请重新登录")
                 if "--json-out" in tail:
                     # 签名项目的 main.py 被整体改写时最容易丢的就是这个参数
                     raise DouyinError(
@@ -220,6 +235,129 @@ class DouyinCrawler:
     def get_login_state(phone: str) -> dict:
         """读已缓存的登录态 cookie（Phase 2 爬虫要用它）。"""
         return get_cache().get_json(f"dy_login:{phone}")
+    # ------------------------------------------------------------------ 数据接口
+    # 6 个数据接口项目（signing/<name>/main.py）。只需 a_bogus + 会话 cookie，
+    # 不需浏览器 / dtrait；各自独立，不加全局锁。
+    @staticmethod
+    def _data_cookie(phone: str) -> dict:
+        """数据接口用的会话 cookie：优先登录态，其次发码会话。"""
+        cache = get_cache()
+        jar = cache.get_json(f"dy_login:{phone}") or cache.get_json(f"dy_session:{phone}")
+        if not jar:
+            raise DouyinError("没有可用会话：请先在 App 登录（后端才持有 cookie）")
+        return jar
+
+    def _run_data(self, project: str, args: list, phone: str,
+                  require_login: bool = False) -> dict:
+        """跑数据接口项目 main.py，把会话 cookie 落临时文件传 --cookie-file。
+
+        `require_login=True` 时额外传 `--check-login`：项目先确认会话是 www 登录态，
+        否则退出码 3 + `NEED_LOGIN`，这里抬成 `DouyinAuthError`（路由层回 401）。
+        """
+        jar = self._data_cookie(phone)
+        fd, cookie_path = tempfile.mkstemp(prefix=f"dy_{project}_ck_", suffix=".json")
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump({"jar": jar}, handle)
+        extra = ["--check-login"] if require_login else []
+        try:
+            return self._run_cli(project, [*args, "--cookie-file", cookie_path, *extra],
+                                 settings.DATA_TIMEOUT)
+        finally:
+            Path(cookie_path).unlink(missing_ok=True)
+
+    @staticmethod
+    def _envelope(payload: dict, data) -> dict:
+        """把签名项目的 --json-out 快照归一成后端统一响应。"""
+        body = payload.get("json") or {}
+        if not body:
+            text = (payload.get("text") or "").strip()
+            hint = text[:160] if text else "空 body（该端点可能被端点级反爬拦截）"
+            return {"success": False, "status_code": None,
+                    "message": f"非 JSON 响应（{payload.get('content_type') or '?'}）：{hint}",
+                    "data": None}
+        status = body.get("status_code")
+        ok = status == 0
+        return {"success": ok, "status_code": status,
+                "message": None if ok else (body.get("status_msg") or "拖音返回非 0 状态码"),
+                "data": data if ok else None}
+
+    # -- 视频详情
+    def _aweme_detail_sync(self, phone: str, aweme_id: str) -> dict:
+        payload = self._run_data("aweme_detail", ["--aweme-id", aweme_id], phone,
+                                 require_login=True)
+        body = payload.get("json") or {}
+        return self._envelope(payload, normalize.aweme(body.get("aweme_detail")))
+
+    async def aweme_detail(self, phone: str, aweme_id: str) -> dict:
+        return await asyncio.to_thread(self._aweme_detail_sync, phone, aweme_id)
+
+    # -- 评论列表
+    def _comment_list_sync(self, phone, aweme_id, cursor, count) -> dict:
+        payload = self._run_data(
+            "comment_list",
+            ["--aweme-id", aweme_id, "--cursor", str(cursor), "--count", str(count)],
+            phone, require_login=True)
+        body = payload.get("json") or {}
+        data = {"total": body.get("total"), "has_more": bool(body.get("has_more")),
+                "cursor": body.get("cursor"),
+                "comments": normalize.comments(body.get("comments"))}
+        return self._envelope(payload, data)
+
+    async def comment_list(self, phone, aweme_id, cursor=0, count=20) -> dict:
+        return await asyncio.to_thread(self._comment_list_sync, phone, aweme_id, cursor, count)
+
+    # -- 评论回复（端点级反爬，可能返回空 body）
+    def _comment_reply_sync(self, phone, aweme_id, comment_id, cursor, count) -> dict:
+        payload = self._run_data(
+            "comment_reply",
+            ["--aweme-id", aweme_id, "--comment-id", comment_id,
+             "--cursor", str(cursor), "--count", str(count)],
+            phone, require_login=True)
+        body = payload.get("json") or {}
+        data = {"has_more": bool(body.get("has_more")), "cursor": body.get("cursor"),
+                "comments": normalize.comments(body.get("comments"))}
+        return self._envelope(payload, data)
+
+    async def comment_reply(self, phone, aweme_id, comment_id, cursor=0, count=20) -> dict:
+        return await asyncio.to_thread(self._comment_reply_sync, phone, aweme_id, comment_id,
+                                       cursor, count)
+
+    # -- 视频列表（推荐 tab feed）
+    def _aweme_feed_sync(self, phone, count, refresh_index) -> dict:
+        payload = self._run_data(
+            "aweme_feed", ["--count", str(count), "--refresh-index", str(refresh_index)], phone,
+            require_login=True)
+        body = payload.get("json") or {}
+        data = {"has_more": bool(body.get("has_more")),
+                "items": normalize.aweme_list(body.get("aweme_list"))}
+        return self._envelope(payload, data)
+
+    async def aweme_feed(self, phone, count=10, refresh_index=1) -> dict:
+        return await asyncio.to_thread(self._aweme_feed_sync, phone, count, refresh_index)
+
+    # -- 用户信息
+    def _user_profile_sync(self, phone, sec_user_id) -> dict:
+        payload = self._run_data("user_profile", ["--sec-user-id", sec_user_id], phone,
+                                 require_login=True)
+        body = payload.get("json") or {}
+        return self._envelope(payload, normalize.user(body.get("user")))
+
+    async def user_profile(self, phone, sec_user_id) -> dict:
+        return await asyncio.to_thread(self._user_profile_sync, phone, sec_user_id)
+
+    # -- 关键词搜索（需 www.douyin.com 登录态）
+    def _aweme_search_sync(self, phone, keyword, offset, count) -> dict:
+        payload = self._run_data(
+            "aweme_search",
+            ["--keyword", keyword, "--offset", str(offset), "--count", str(count)], phone,
+            require_login=True)
+        body = payload.get("json") or {}
+        data = {"has_more": bool(body.get("has_more")),
+                "items": normalize.aweme_list(body.get("aweme_list") or body.get("data"))}
+        return self._envelope(payload, data)
+
+    async def aweme_search(self, phone, keyword, offset=0, count=20) -> dict:
+        return await asyncio.to_thread(self._aweme_search_sync, phone, keyword, offset, count)
 
 
 # 全局实例

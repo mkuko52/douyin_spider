@@ -19,5 +19,13 @@ android/local.properties
 # signing/send_code/.gitignore
 # signing/sms_login/.gitignore
 
+# ============ 项目自带运行时（体积大，可重建）============
+backend/runtime/venv/
+
+# end_test 的本地凭据（JWT）
+end_test/token.txt
+
 # 本地备份压缩包：内部含 config.local.json / 真实会话 cookie / 私密缓存，不入库
 signing/backup/
+*.zip
+*.7z

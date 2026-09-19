@@ -7,9 +7,9 @@
 ```
 Android App (纯 UI 前端)
      ↓ HTTP(JSON)  POST /api/auth/send_code, /api/auth/sms_login
-FastAPI Backend  api/auth.py   路由 + JWT
-     ↓           core/crawler.py 调度（asyncio.to_thread + 全局锁）
-     ↓ subprocess 调 signing/{send_code,sms_login}/main.py   ← 唯一 HTTP 出口
+FastAPI Backend  api/auth.py（登录）· api/data.py（数据 6 路由）  路由 + JWT
+     ↓           core/crawler.py 调度（asyncio.to_thread；登录环节加全局锁）
+     ↓ subprocess 调 signing/<项目>/main.py   ← 唯一 HTTP 出口
 抖音 login.douyin.com  /passport/web/send_code/ · /passport/web/sms_login/
      ↑
 core/cache.py   dy_session:{phone}（发码会话）→ dy_login:{phone}（登录态）
@@ -20,15 +20,18 @@ JWT + 抖音登录态 cookie 返回 App
 发码所需的 `a_bogus` / `dtrait` 由 `send_code` 的常驻工件服务（`127.0.0.1:8787`，浏览器+Node
 只启一次）现场生成；登录走 `sms_login` 的 nv8 路径（无浏览器）。
 
+> Phase 2 数据接口（`signing/aweme_detail` 等 6 个 + 共用的 `signing/_shared`）见下文
+> 「签名模块结构」。它们**尚未接入 backend**，所以上图只画已接线的登录链路。
+
 ### 技术栈
 
 | 层级 | 技术 | 职责 |
 |------|------|------|
 | Android | 纯 Java UI | 界面交互，调用后端 API |
 | Backend | FastAPI (Python) | API 路由、JWT、调度、登录态缓存 |
-| HTTP 出口 | send_code: aiohttp / sms_login: requests | **由 signing 两个项目独占**，backend 不发抖音请求 |
-| 参数与签名 | sign/qs/aid-sign/enc 纯 Python；a_bogus→浏览器 bdms 或 nv8；dtrait→nv8+RSA/AES | 见各项目 `分析报告.md` |
-| 后端↔签名 | subprocess + `--json-out` | 两个项目各有 venv + 同名 `utils` 包，不能 import |
+| HTTP 出口 | send_code: aiohttp / sms_login: requests；数据接口共用 `_shared`（requests） | **由 signing 项目独占**，backend 不发抖音请求 |
+| 参数与签名 | sign/qs/aid-sign/enc 纯 Python；a_bogus→浏览器 bdms / nv8 / `_shared` 的 mod.js；dtrait→nv8+RSA/AES | 见各项目 `分析报告.md` / README |
+| 后端↔签名 | subprocess + `--json-out` | 登录类项目各自独立（venv + 同名 `utils`）；数据接口共用 `signing/_shared` |
 | 缓存 | 内存 dict（`cache.py`，接口同 Redis） | 发码会话、登录态 |
 
 ### 目录结构
@@ -39,32 +42,47 @@ JWT + 抖音登录态 cookie 返回 App
 backend/                              # FastAPI 后端（只做调度与登录态，不发抖音请求）
 ├── main.py                           # 入口：FastAPI app、CORS、路由注册
 ├── config.py                         # 配置：Redis/JWT/Signing 路径/超时/工件服务地址
-├── requirements.txt                  # fastapi uvicorn pyjwt pydantic aiohttp redis PyExecJS requests cryptography
+├── requirements.txt                  # fastapi uvicorn pyjwt pydantic（web）+ aiohttp requests cryptography pyexecjs2（签名项目用）
+├── start.bat / start.sh              # ★用后端自带 venv 起服务
+├── runtime/
+│   ├── bootstrap.py                  # 建/检后端自带 venv（--install / --check）
+│   └── venv/                         # 后端自带 venv（gitignored，可重建）
+│                                     #   同时当「没有自带 venv 的签名项目」的解释器
 │
 ├── api/                              # 路由层
 │   ├── __init__.py
-│   ├── auth.py                       # POST /api/auth/send_code  {phone}
-│   │                                 # POST /api/auth/sms_login  {phone, code}
-│   └── deps.py                       # create_token / verify_token（JWT）
+│   ├── auth.py                       # POST /api/auth/send_code   {phone}
+│   │                                 # POST /api/auth/sms_login   {phone, code}
+│   ├── data.py                       # ★数据接口 6 个明确路由（Phase 2）
+│   │                                 # POST /api/data/detail    {aweme_id}
+│   │                                 # POST /api/data/comments  {aweme_id, cursor, count}
+│   │                                 # POST /api/data/replies   {aweme_id, comment_id, cursor, count}
+│   │                                 # POST /api/data/feed      {count, refresh_index}
+│   │                                 # POST /api/data/user      {sec_user_id}
+│   │                                 # POST /api/data/search    {keyword, offset, count}
+│   └── deps.py                       # create_token(user_id, phone) / verify_token / current_phone（JWT）
 │
 ├── core/                             # 核心层
 │   ├── __init__.py
-│   ├── crawler.py                    # ★调度层：subprocess 调 signing 两个 main.py，
+│   ├── crawler.py                    # ★调度层：subprocess 调 signing 的各 main.py，
 │   │                                 #   归一化响应、缓存「发码会话 / 登录态」
+│   ├── normalize.py                  # ★拖音原始响应 → 扁平记录（aweme / comment / user / aweme_list）
 │   ├── cache.py                      # 缓存（内存实现，set/get/set_json/get_json，接口同 Redis）
 │   └── signing.py                    # ⚠️ 早期 execjs 桥接脚手架，当前无调用方（见「调度策略」）
 │
 ├── models/                           # 数据模型
 │   ├── __init__.py
-│   └── schemas.py                    # Pydantic：SendCode/SmsLogin 请求与响应
+│   └── schemas.py                    # Pydantic：SendCode/SmsLogin + 6 个数据接口的请求与 DataResponse
 │
 └── tests/
-    └── test_crawler_offline.py       # 离线自检（响应契约 + CLI 接线，不发网络）
+    ├── test_crawler_offline.py       # 离线自检（登录响应契约 + CLI 接线，不发网络）
+    └── test_data_offline.py          # 离线自检（数据接口：normalize + _envelope + 6 项目调度接线）
 ```
 
 #### 签名模块结构
 
-> 两个接口各自是一个独立 project-root（自带 venv / Node / 浏览器工件，彼此不 import）。
+> 每个接口各自是一个独立 project-root（send_code/sms_login 是登录类，其余是数据类；
+> 彼此不 import，同名 `utils` 包不共享）。
 > **本节结构必须与磁盘实际目录逐行一致**（改完代码/新增文件后同步更新这里），
 > 以 `find signing/send_code signing/sms_login -maxdepth 2` 为准。
 
@@ -154,6 +172,44 @@ signing/
     │   └── private/                  # 10 份会话/指纹状态（*_session.json、browser_state.json…）
     └── （无 runtime/：直接用当前解释器；需要 execjs/requests/cryptography）
 ```
+
+**数据接口（Phase 2，每个接口一个独立 project-root）**：每个项目只有 `main.py`（接口路径 +
+业务参数 + 打印摘要）；**公共参数 / a_bogus / cookie / 请求 / `--json-out` 全部共用
+`signing/_shared/`（唯一一份）**，不在各接口重复复制。数据接口（`/aweme/v1/web/*`）
+**只需 `a_bogus`，不需要浏览器 / dtrait**。
+
+```
+signing/
+├── _shared/                          # ★ 数据接口共用（唯一一份）
+│   ├── params.py                     # 公共参数 COMMON_PARAMS + build_params / build_url
+│   ├── node.py                       # ★项目自带 node 的解析（DOUYIN_NODE → send_code/runtime/node_local → PATH）
+│   ├── signer.py                     # pyexecjs2 → node/mod.js（sign_url / a_bogus）
+│   ├── nv8.py                        # 真 bdms a_bogus（replies 必须用；复用 sms_login/node/abogus_server.mjs）
+│   ├── nv8_service.py                # ★常驻 nv8 工件服务（HTTP :8789，Node/bdms 只启一次）
+│   ├── start_nv8_service.bat / .sh   # 启常驻服务
+│   ├── http.py                       # load_cookie_file / build_headers / sign / request / write_json_out
+│   │                                 # + 登录态检查：PATH_LOGIN_CHECK / is_logged_in / assert_login
+│   ├── cli.py                        # 通用开关（--cookie-file/--dry-run/--verbose/--verify-tls/--check-login/--config/--json-out）
+│   ├── logger.py
+│   ├── node/mod.js                   # a_bogus 签名器（与 send_code/sms_login 字节一致）
+│   └── tests/test_vectors.py         # 6 条 a_bogus 冻结向量 + build_url/sign_url + 登录判定
+│
+├── aweme_detail/                     # 视频详情  GET /aweme/v1/web/aweme/detail/
+├── comment_list/                     # 评论列表  GET /aweme/v1/web/comment/list/
+├── comment_reply/                    # 评论回复  GET /aweme/v1/web/comment/list/reply/（需真 bdms a_bogus）
+├── aweme_feed/                       # 视频列表  GET /aweme/v1/web/tab/feed/
+├── user_profile/                     # 用户信息  GET /aweme/v1/web/user/profile/other/
+└── aweme_search/                     # 关键词搜索 GET /aweme/v1/web/search/item/（需 www 登录态）
+    ├── main.py                       # ★只有「接口路径 + 业务参数 + 打印摘要」
+    ├── README.md
+    ├── config.local.json             # cookie_file / verify_tls（gitignored）
+    ├── requirements.txt              # requests + pyexecjs2
+    ├── tests/test_vectors.py         # 本接口 URL/参数组装（1 项；a_bogus 向量在 _shared）
+    └── output/last_request.json
+```
+
+> 数据接口的 `--json-out` 契约：`{path, status, content_type, headers, json}`
+> （非 JSON 响应时给 `text`）。
 
 两个项目都支持 `--json-out <file>`：把响应（status / content_type / 风控响应头 / 解析后的 JSON）
 写成 JSON 文件——backend 读它，**不解析 stdout**（stdout 有 4000 字截断 + 中文日志）。
@@ -252,6 +308,40 @@ curl -X POST http://127.0.0.1:8000/api/auth/sms_login \
 > ⚠️ 抖音 `/passport/web/*` 的响应是 `{data:{error_code,description},message}`，**不是**
 > `{status_code,description}`。按后者取字段会永远得到 `success=True` 且 token 为 `None`。
 
+### 数据接口契约（Phase 2，6 个明确路由）
+
+全部 `POST /api/data/*`，需 `Authorization: Bearer <后端 JWT>`（登录时拿到的 token）。
+**手机号不在 body 里** —— 从 JWT 的 `phone` claim 取，后端用它去缓存找 `dy_login:{phone}` 会话。
+
+| 路由 | 请求体 | `data` 形状 | 对应 signing 项目 |
+|------|--------|-------------|------------------|
+| `/api/data/detail` | `{"aweme_id":"<id>"}` | 作品摘要（aweme_id/desc/author/statistics/duration/is_image） | `aweme_detail` |
+| `/api/data/comments` | `{"aweme_id":"<id>","cursor":0,"count":20}` | `{total, has_more, cursor, comments:[…]}` | `comment_list` |
+| `/api/data/replies` | `{"aweme_id":"<id>","comment_id":"<cid>","cursor":0,"count":20}` | `{has_more, cursor, comments:[…]}` | `comment_reply`（默认 nv8 真 bdms） |
+| `/api/data/feed` | `{"count":10,"refresh_index":1}` | `{has_more, items:[…]}` | `aweme_feed` |
+| `/api/data/user` | `{"sec_user_id":"<sec_uid>"}` | `{uid,sec_uid,nickname,unique_id,follower_count,…}` | `user_profile` |
+| `/api/data/search` | `{"keyword":"…","offset":0,"count":20}` | `{has_more, items:[…]}` | `aweme_search` ⚠️ 需 www 登录态 |
+
+统一响应（所有 6 个）：
+
+```json
+{"success": true, "status_code": 0, "message": null, "data": { }}
+```
+
+- `success` = 抖音业务 `status_code == 0`；失败时 `data` 为 `null`，看 `message`（如 `2483` 未登录、
+  `非 JSON 响应（text/plain）：空 body`）。
+- HTTP 码：`401` = 无 token / token 缺 `phone` / **会话不是 www 登录态**（数据项目 `--check-login`
+  打 `/aweme/v1/web/notice/count/` 得 `8` → 退出码 3 + `NEED_LOGIN` → `DouyinAuthError`）；
+  `400` = 无可用会话（未登录）或签名项目跑不起来；
+  `200` + `success:false` = 抖音侧失败（不发 HTTP 错误码）。
+- 离线自检（不发网络）：`python backend/tests/test_data_offline.py`。
+
+> ⚠️ **数据接口要的是「会话 cookie」，不一定是「真登录」**（`detail`/`comments`/`feed`/`user`
+> 匿名会被 `text/plain` 空 body 挡回，但给个带 `ttwid` 的会话就过）。
+> 而 `aweme_search` 需 **`www.douyin.com` 真登录**（无登录态/会话过期 → `2483`；
+> 给一份活着的 www 登录态 → `status_code=0` 返回真实作品（实测）。
+> 注：同一账号再登录会使旧会话失效，缓存必须是最近一次登录的那份）。
+
 ## 开发路线
 
 ### Phase 1: 登录模块（当前）
@@ -264,10 +354,33 @@ curl -X POST http://127.0.0.1:8000/api/auth/sms_login \
 - [ ] App ↔ 后端登录态联调（App 侧还是本地 WebView 抓 dtrait 的旧路径）
 
 ### Phase 2: 核心爬虫
-- [ ] 视频列表接口
-- [ ] 视频详情接口
-- [ ] 用户信息接口
-- [ ] 评论接口
+
+签名项目（已完成，每接口一个 `signing/<name>/`）：
+- [x] 视频列表 `signing/aweme_feed/` — `GET /aweme/v1/web/tab/feed/`
+- [x] 视频详情 `signing/aweme_detail/` — `GET /aweme/v1/web/aweme/detail/`
+- [x] 用户信息 `signing/user_profile/` — `GET /aweme/v1/web/user/profile/other/`
+- [x] 评论 `signing/comment_list/` + `signing/comment_reply/`（reply 已打通：改用真 bdms a_bogus）
+- [x] 关键词搜索 `signing/aweme_search/`（需 www 登录态，见下）
+- [x] backend 调度层：`core/crawler.py` 加 6 个方法（`_run_data` + `_envelope`）
+- [x] backend 路由：`api/data.py` 6 个明确路由 + `models/schemas.py` + JWT `phone` claim
+- [x] backend 归一化：`core/normalize.py`（aweme / comment / user / aweme_list）
+- [x] backend 离线自检：`tests/test_data_offline.py`
+- [x] 登录态判定：数据项目 `--check-login`（`/aweme/v1/web/notice/count/`）→ 后端 401 请重新登录
+- [ ] App 页面（列表 / 详情 / 评论 / 用户 / 搜索）接入 `/api/data/*`
+
+> ⚠️ **登录态边界（实测修正）**：登录流程产出的会话**可以**是 `www.douyin.com` 的合法登录态——
+> `async_session.json` 实测 `/aweme/v1/web/notice/count/` = `0`、`search` = `0`（返回真实作品）。
+> 但**同一账号再次登录会让旧会话失效**：`sms_login_session.json` / `nv8_session.json` 现在都是
+> `account_info error_code=13 会话过期` → `/notice/count/` = `8`、`search` = `2483`。
+> 所以后端缓存里的 `dy_login:{phone}` 必须是**最近一次成功登录**的会话。
+>
+> 数据接口分两档：
+> - 公开（`detail` / `comments` / `feed` / `user`）：只需一个带 `ttwid` 的**会话**，不要求登录。
+> - 登录门控：只有 **`search`**。给 www 登录态即 `0`（实测）。
+> - `replies` **不卡登录，卡签名来源**：mod.js 的 a_bogus 它不认，必须 `--abogus-source nv8`
+>   （真 bdms）。证据 `signing/comment_reply/js_reverse_cache/env/reply_bdms_finding.md`。
+>   nv8 建议走常驻服务（`signing/_shared/start_nv8_service.bat`，:8789）——单次 a_bogus ~20ms；
+>   服务没开时 CLI 自动回落本进程起 Node（~5s）。
 
 ### Phase 3: 数据处理
 - [ ] 数据清洗
@@ -277,13 +390,18 @@ curl -X POST http://127.0.0.1:8000/api/auth/sms_login \
 ## 运行方式
 
 ```bash
+# 一次性：建后端自带 venv（不依赖系统 python）
+python backend/runtime/bootstrap.py --install
+
 # 启动后端（backend 是命名空间包，从仓库根跑；
 # `cd backend && python main.py` 会因相对 import 报 ImportError）
-pip install -r backend/requirements.txt
-uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+backend/start.bat                    # Windows（自动用 backend/runtime/venv）
+# 或  ./backend/start.sh               # Linux/macOS
+# 或  backend/runtime/venv/Scripts/python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 
 # 离线自检（不发网络）
 python backend/tests/test_crawler_offline.py
+python backend/tests/test_data_offline.py      # 数据接口离线自检（不发网络）
 
 # 单独验签名项目（各自能跑完整个流程；--dry-run = 只组参数不发请求）
 cd signing/send_code && runtime/venv/Scripts/python.exe main.py --dry-run
@@ -364,6 +482,13 @@ cd signing/send_code && python tests/test_vectors.py          # 离线固定向�
 新页面上线前用 `uiautomator dump` 对一遍 bounds，比肉眼判断可靠
 
 ## 开发规范
+
+### `.bat` 必须 CRLF + 纯 ASCII 注释
+- Windows `cmd.exe` 只认 **CRLF**；LF-only 会让它解析错行，把 UTF-8 中文注释当命令执行，
+  报 `'渚濊禆绯荤粺' 不是内部或外部命令`（GBK 解码出来的“依赖系统”）。
+- `.bat` 注释一律写英文/ASCII（cmd 按 OEM 码页解码，中文必乱码）；`.sh` 保持 LF。
+- 排查：`python -c "b=open('x.bat','rb').read(); print(b.count(b'\r\n'), b.count(b'\n')-b.count(b'\r\n'))"`
+  （第二项应为 0）。
 
 ### 添加防重复/锁状态时
 - 必须在所有异步路径清除 flag（成功 + 失败 + 超时 + catch）

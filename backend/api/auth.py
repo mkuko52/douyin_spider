@@ -50,7 +50,7 @@ async def api_sms_login(req: SmsLoginRequest):
         success=True,
         message=result['message'],
         error_code=result['error_code'],
-        token=create_token(user_id),
+        token=create_token(user_id, phone=req.phone),
         user_id=user_id,
         session_id=result['session_id'],
         cookies=result['cookies'],

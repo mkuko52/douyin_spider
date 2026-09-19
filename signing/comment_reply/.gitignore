@@ -1,0 +1,5 @@
+config.local.json
+js_reverse_cache/**
+output/**
+__pycache__/
+*.pyc
