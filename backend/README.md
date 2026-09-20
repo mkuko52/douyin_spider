@@ -69,6 +69,21 @@ curl http://127.0.0.1:8000/health      # {"status":"ok"}
 | POST | `/api/auth/sms_login` | `{"phone":"13800138000","code":"123456"}` |
 | GET | `/health` `/docs` `/redoc` `/openapi.json` | — |
 
+**数据接口（Phase 2，需 `Authorization: Bearer <登录返回的 JWT>`）**：手机号从 JWT 的 `phone`
+claim 取，据此找会话 cookie 再传给签名项目。
+
+| 方法 | 路径 | 请求体 | 签名项目 |
+|---|---|---|---|
+| POST | `/api/data/detail` | `{"aweme_id":"<id>"}` | `aweme_detail` |
+| POST | `/api/data/comments` | `{"aweme_id":"<id>","cursor":0,"count":20}` | `comment_list` |
+| POST | `/api/data/replies` | `{"aweme_id":"<id>","comment_id":"<cid>","cursor":0,"count":20}` | `comment_reply`（默认 nv8） |
+| POST | `/api/data/feed` | `{"count":10,"refresh_index":1}` | `aweme_feed` |
+| POST | `/api/data/user` | `{"sec_user_id":"<sec_uid>"}` | `user_profile` |
+| POST | `/api/data/search` | `{"keyword":"…","offset":0,"count":20}` | `aweme_search` ⚠️ 需 www 登录态 |
+
+统一响应 `{"success":bool,"status_code":int|null,"message":str|null,"data":object|null}`；
+每个路由都带 `--check-login`，会话不是 www 登录态时回 **401 请重新登录**。
+
 ```bash
 # 发码（会给该号码发真实短信）
 curl -X POST http://127.0.0.1:8000/api/auth/send_code \
@@ -87,7 +102,8 @@ curl -X POST http://127.0.0.1:8000/api/auth/sms_login \
 | 场景 | HTTP | body |
 |---|---|---|
 | 缺字段 | `422` | pydantic 的 detail |
-| 参数/环境问题（手机号格式、验证码为空、签名项目跑不起来） | `400` | `{"detail":"..."}`，**不会发抖音请求** |
+| 参数/环境问题（手机号格式、验证码为空、签名项目跑不起来、无可用会话） | `400` | `{"detail":"..."}`，**不会发抖音请求** |
+| 无 token / token 缺 `phone` / **会话不是 www 登录态**（数据接口） | `401` | `{"detail":"..."}`，请重新登录 |
 | 抖音侧业务失败 | `200` | `{"success":false,"message":"...","error_code":...}` |
 | 成功 | `200` | `{"success":true,...}` |
 
