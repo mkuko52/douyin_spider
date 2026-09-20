@@ -77,6 +77,23 @@ douyin_spider/
 
 ## 快速开始
 
+### 一键更新
+
+使用 `git clone` 安装项目后，可随时运行根目录的更新器拉取最新进度：
+
+```bat
+:: Windows：双击 update.bat，或在终端运行
+update.bat
+```
+
+```bash
+# macOS / Linux
+./update.sh
+```
+
+更新器只接受 Git 仓库且无本地代码改动的项目，并使用 `git pull --ff-only` 安全更新；
+被 `.gitignore` 忽略的本地配置、登录态和运行文件不会被删除。
+
 ### 1. 后端
 
 ```bash
