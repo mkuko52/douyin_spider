@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]          # signing/
 sys.path.insert(0, str(ROOT))
 
 from _shared import params as C                     # noqa: E402
+from _shared.nv8 import web_sign                    # noqa: E402
 
 PATH = "/aweme/v1/web/aweme/detail/"
 
@@ -30,9 +31,23 @@ def test_url():
     print("test_url OK")
 
 
+def test_web_sign():
+    """详情专用的 secsdk 动态签名必须在本地生成，不发网络请求。"""
+    uifid = "test-uifid"
+    url = C.build_url(PATH, C.build_params(aweme_id="7626316866109066511", uifid=uifid))
+    signed, headers = web_sign(url, uifid)
+    query = parse_qs(urlparse(signed).query)
+    assert query["uifid"] == [uifid]
+    assert query["timestamp"][0].isdigit()
+    assert len(query["x-secsdk-web-signature"][0]) == 32
+    assert headers["uifid"] == uifid
+    print("test_web_sign OK")
+
+
 def main() -> int:
     test_url()
-    print("\n1/1 通过")
+    test_web_sign()
+    print("\n2/2 通过")
     return 0
 
 

@@ -101,9 +101,8 @@ def main() -> int:
     parser.add_argument("--send-code-service", default=DEFAULT_SERVICE,
                         help="send_code 常驻工件服务地址（用它的会话发码/登录，默认 %s）" % DEFAULT_SERVICE)
     parser.add_argument("--timeout", type=int, default=300, help="等待 send_code 的秒数")
-    parser.add_argument("--post-send-delay", type=int, default=95,
-                        help="发码后等多少秒再登录（默认 95）。实测阈值在 ~90s："
-                             "<90s 提交会得到 `7 访问太频繁`，**而且会把该验证码作废**")
+    parser.add_argument("--post-send-delay", type=int, default=0,
+                        help="输入验证码后额外等待多少秒再登录（默认不等待）")
     args = parser.parse_args()
 
     mobile = (args.mobile or "").strip()

@@ -120,8 +120,9 @@ def main() -> int:
                     help="覆盖所有项目的 a_bogus 来源（默认用各项目自己的默认值）")
     args = ap.parse_args()
 
-    if not Path(args.cookie_file).exists():
-        print(f"cookie 文件不存在：{args.cookie_file}", file=sys.stderr)
+    cookie_file = Path(args.cookie_file).resolve()
+    if not cookie_file.is_file():
+        print(f"cookie 文件不存在：{cookie_file}", file=sys.stderr)
         return 2
 
     # --skip 用中文名或项目名都认
@@ -129,7 +130,7 @@ def main() -> int:
     cases = [c for c in CASES if c[0] not in skips and c[1] not in skips
              and c[1].replace("aweme_", "").replace("comment_", "") not in skips]
 
-    print(f"cookie : {args.cookie_file}")
+    print(f"cookie : {cookie_file}")
     print(f"python : {args.python}")
     print(f"来源   : {args.abogus_source or '各项目默认（replies=nv8，其余=modjs）'}")
     print("-" * 78)
@@ -137,7 +138,7 @@ def main() -> int:
     results = []
     for name, project, sub, need_login in cases:
         try:
-            r = run_case(name, project, sub, args.cookie_file, args.python,
+            r = run_case(name, project, sub, str(cookie_file), args.python,
                          need_login and not args.no_check_login, args.abogus_source, args.timeout)
         except subprocess.TimeoutExpired:
             r = {"ok": False, "ms": args.timeout * 1000, "note": f"超时（{args.timeout}s）", "raw": ""}

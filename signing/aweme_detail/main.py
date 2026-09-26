@@ -24,6 +24,7 @@ import requests                                     # noqa: E402
 from _shared import cli, http                       # noqa: E402
 from _shared import params as C                     # noqa: E402
 from _shared.logger import logger                   # noqa: E402
+from _shared.nv8 import Nv8Error, web_sign           # noqa: E402
 from _shared.signer import SignerError              # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
@@ -36,11 +37,17 @@ def main() -> int:
     args = parser.parse_args()
     cookie, verify = cli.prepare(args)
 
-    params = C.build_params(aweme_id=args.aweme_id)
+    uifid = next((part[len("UIFID="):] for part in cookie.split("; ")
+                  if part.startswith("UIFID=")), None)
+    if not uifid:
+        print("视频详情需要登录态中的 UIFID cookie", file=sys.stderr)
+        return 2
+    params = C.build_params(aweme_id=args.aweme_id, request_source="600",
+                            origin_type="video_page", uifid=uifid)
     referer = f"https://www.douyin.com/video/{args.aweme_id}"
     try:
-        signed = http.sign(PATH_DETAIL, params, args.abogus_source)
-    except SignerError as exc:
+        signed, headers = web_sign(http.sign(PATH_DETAIL, params, args.abogus_source), uifid)
+    except (SignerError, Nv8Error) as exc:
         print(f"签名失败：{exc}", file=sys.stderr)
         return 2
 
@@ -54,7 +61,7 @@ def main() -> int:
         return 0
 
     try:
-        resp, parsed = http.request(signed, cookie, referer, verify)
+        resp, parsed = http.request(signed, cookie, referer, verify, headers)
     except requests.RequestException as exc:
         print(f"请求失败：{exc}", file=sys.stderr)
         return 2

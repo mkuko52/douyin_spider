@@ -125,10 +125,11 @@ def assert_login(cookie: str, verify: bool = False) -> None:
         raise LoginRequiredError(status)
 
 
-def request(signed_url: str, cookie: str, referer: str, verify: bool = False):
+def request(signed_url: str, cookie: str, referer: str, verify: bool = False,
+            extra_headers: dict | None = None):
     """GET 已签名的 URL，返回 (response, parsed_json|None)。"""
-    resp = requests.get(signed_url, headers=build_headers(cookie, referer),
-                        timeout=25, verify=verify)
+    resp = requests.get(signed_url, headers={**build_headers(cookie, referer), **(extra_headers or {})},
+                         timeout=25, verify=verify)
     try:
         parsed = resp.json()
     except ValueError:

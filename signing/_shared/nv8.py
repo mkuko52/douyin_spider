@@ -1,8 +1,8 @@
-"""nv8.py —— 数据接口的「真 bdms」a_bogus（唯一一份）。
+"""nv8.py —— 数据接口的本地 bdms a_bogus / secsdk webSignUrl。
 
 为什么要真 bdms：`/aweme/v1/web/comment/list/reply/` **不认**公开 `mod.js` 的 a_bogus ——
 同一份 query，只有 a_bogus 不同：mod.js → `text/plain` 空 body ❌；真 bdms → `status_code=0` ✅。
-（`comment/list` / `detail` / `feed` / `user` / `search` 用 mod.js 就够，只有 `reply` 挑。）
+（详情还需 secsdk webSignUrl；回复需真 bdms。）
 
 **两种取法**：
 
@@ -101,6 +101,27 @@ def a_bogus_local(url: str, method: str = "GET", body: str | None = None) -> str
         if not res.get("ok"):
             raise Nv8Error("nv8 生成 a_bogus 失败: %s" % res.get("error"))
         return res["a_bogus"]
+
+
+def web_sign(url: str, uifid: str) -> tuple[str, dict]:
+    """本地 secsdk webSignUrl：只生成 URL 和附加请求头，不发 HTTP 请求。"""
+    global _seq
+    with _lock:
+        proc = _start()
+        _seq += 1
+        proc.stdin.write(json.dumps({"id": _seq, "cmd": "websign", "url": url,
+                                     "uifid": uifid}) + "\n")
+        proc.stdin.flush()
+        line = proc.stdout.readline()
+        if not line:
+            raise Nv8Error("nv8 webSignUrl 无响应")
+        res = json.loads(line)
+        if not res.get("ok") or not isinstance(res.get("result"), dict):
+            raise Nv8Error("nv8 webSignUrl 失败: %s" % res.get("error"))
+        signed = res["result"]
+        if not signed.get("url") or not isinstance(signed.get("headers"), dict):
+            raise Nv8Error("nv8 webSignUrl 未返回 URL/请求头")
+        return signed["url"], signed["headers"]
 
 
 def _from_service(url: str, method: str, body: str | None, timeout: float = 60.0) -> str:

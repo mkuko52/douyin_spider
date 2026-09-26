@@ -533,6 +533,17 @@ async function handle(req) {
       const r = await makeABogus(url, env, req.method, req.body);
       return { ok: true, a_bogus: r.a_bogus, signedUrl: r.signedUrl };
     }
+    case 'websign': {
+      const sb = await getBdmsSandbox(Object.assign({}, DEFAULT_ENV, req.env || {}));
+      const raw = await sb.evaluate(`(function(){
+        window._secsdk_uifid = ${JSON.stringify(req.uifid || '')};
+        var sign = window.use && window.use('webSignUrl');
+        if (typeof sign !== 'function') return JSON.stringify({ error: 'webSignUrl unavailable' });
+        return JSON.stringify(sign(${JSON.stringify(req.url)}));
+      })()`);
+      const text = raw && raw.value !== undefined ? raw.value : raw;
+      return { ok: true, result: typeof text === 'string' ? JSON.parse(text) : text };
+    }
     default:
       return { ok: false, error: 'unknown cmd: ' + req.cmd };
   }
